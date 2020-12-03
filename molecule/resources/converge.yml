@@ -1,4 +1,23 @@
 ---
+- name: Prepare - Localhost Actions
+  hosts: localhost
+  connection: local
+  tasks:
+    - name: Prepare - Patch Needed if molecule is executed in docker
+      block:
+        # Remote Info download is delegated to localhost. This one needs to be able to download os list
+        # If molecule is execute in a docker container, this container must be added to the network
+        # dedicated to the test session.
+        - name: Attach Molecule Container to the Docker Network
+          docker_network:
+            name: molecule-test
+            connected:
+              - molecule
+            appends: yes
+
+      # when molecule is executed in a container
+      when: (ansible_facts.virtualization_type is defined) and (ansible_facts.virtualization_type == 'docker')
+
 - name: Converge
   hosts: all
   tasks:
