@@ -5,15 +5,18 @@ driver:
   name: docker
 platforms:
   - name: rpi
-    image: python:3-alpine
+    image: fletort/sshd-python3-alpine
+    override_command: false
+    volumes:
+    # if molecule inside container use HOST_PWD as base directory
+    # if molecule is executed natively, use MOLECULE_PROJECT_DIRECTORY as base directory
+      - ${HOST_PWD:-$MOLECULE_PROJECT_DIRECTORY}/molecule/resources/files/entrypoint.d/:/etc/entrypoint.d/:ro
     networks:
       - name: molecule-test
-  - name: client_ssh_1
-    image: python:3-alpine
-    networks:
-      - name: molecule-test
-    groups: 
-      - client_ssh
+    env:
+      SSH_ENABLE_ROOT_PASSWORD_AUTH: "true"
+    ports:
+      - "2222:22"
 lint: |
   set -e
   yamllint .
@@ -25,7 +28,7 @@ provisioner:
     skip-tags: molecule-converge-notest
   playbooks:
     prepare: ../resources/prepare.yml
-    converge: ../resources/converge.yml
+    converge: converge_ssh.yml
     cleanup: ../resources/cleanup.yml
   inventory:
     host_vars:
@@ -33,8 +36,6 @@ provisioner:
         # Some action are taken about this variable in prepare.yml depending
         # the molecule execution context (natively or from docker container)
         noobs_repo_server: "http://noobs_repo:8080/os_list.json"
-
-        ssh_client_group_name: "client_ssh"
         
         # Specific test variable used by the prepare playbook
         test_noobs_partition: "noobs_partition_mutiple_os/"
@@ -45,5 +46,5 @@ provisioner:
 verifier:
   name: testinfra
   options:
-    vv: true
+    v: true
   directory: ../resources/tests/

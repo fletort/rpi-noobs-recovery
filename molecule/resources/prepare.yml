@@ -43,7 +43,7 @@
       vars:
         molecule_in_docker: (ansible_facts.virtualization_type is defined) and (ansible_facts.virtualization_type == 'docker')
 
-    - name: Prepare - Patch Needed if molecule is executed in docker
+    - name: Prepare - Patch Needed if molecule is executed in docker  
       block:
         # Remote Info download is delegated to localhost. This one needs to be able to download os list
         # If molecule is execute in a docker container, this container must be added to the network
@@ -56,3 +56,31 @@
             appends: yes
       # when molecule is executed in a container
       when: (ansible_facts.virtualization_type is defined) and (ansible_facts.virtualization_type == 'docker')
+
+    # This is used to test that existing know host is remove by the role 
+    # (as in docker connection mode, the key is not added during the connection,
+    # we do it here manually)
+    - name: Simulate an added key
+      known_hosts:
+        name: rpi
+        key: rpi ssh-rsa ASDeararAIUHI324324
+        state: present
+      when: lookup('env', 'MOLECULE_SCENARIO_NAME') != "cnx_ssh"
+
+- name: Prepare SSH Client(s)
+  hosts: client_ssh
+  tasks:
+    - name: Install sshpass
+      package:
+        name: openssh-keygen
+        state: present
+    - name: Create Root ssh directory
+      file:
+        path: /root/.ssh
+        state: directory
+    - name: Simulate an added key
+      known_hosts:
+        name: rpi
+        key: rpi ssh-rsa ASDeararAIUHI324324
+        state: present
+      when: lookup('env', 'MOLECULE_SCENARIO_NAME') != "cnx_ssh"

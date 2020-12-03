@@ -6,6 +6,7 @@
     - name: Prepare - Patch Needed if molecule is executed in docker
       block:
         # Remote Info download is delegated to localhost. This one needs to be able to download os list
+        # SSH Connection to rpi is made by localhost. THis one needs to access rpi machine.
         # If molecule is execute in a docker container, this container must be added to the network
         # dedicated to the test session.
         - name: Attach Molecule Container to the Docker Network
@@ -15,11 +16,35 @@
               - molecule
             appends: yes
 
+        # Usefull only for docker use (in case that container is created on converge step)
+        - name: Install sshpass
+          package:
+            name: sshpass
+            state: present
+          changed_when: false
       # when molecule is executed in a container
       when: (ansible_facts.virtualization_type is defined) and (ansible_facts.virtualization_type == 'docker')
 
 - name: Converge
-  hosts: rpi
+  hosts: all
+  tasks:
+    - name: Ensure group "all_ssh" exists
+      group:
+        name: all_ssh
+        state: present
+
+    - name: Add docker host to ssh test group
+      add_host:
+        groups: all_ssh
+        name: "{{ inventory_hostname }}"
+        ansible_host: "{{ ansible_host }}"
+        ansible_connection: ssh
+        ansible_user: root
+        ansible_password: root
+      changed_when: false
+
+- name: Converge
+  hosts: all_ssh
   tasks:
     - name: "Include rpi-noobs-recovery"
       include_role:

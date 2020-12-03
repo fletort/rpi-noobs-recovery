@@ -8,16 +8,18 @@ if [ "$1" = "shell" ] ; then
         -v $(pwd):/tmp/$(basename "${PWD}") \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v ~/.cache/:/root/.cache/ \
+        -v ~/.ssh:/root/.ssh \
         -w /tmp/$(basename "${PWD}") \
         -e HOST_PWD=$(PWD) \
         --name molecule \
         quay.io/ansible/molecule:3.0.6 \
-        bin/bash
+        sh
 else
     docker run --rm -it \
         -v $(pwd):/tmp/$(basename "${PWD}") \
         -v /var/run/docker.sock:/var/run/docker.sock \
         -v ~/.cache/:/root/.cache/ \
+        -v ~/.ssh:/root/.ssh \
         -w /tmp/$(basename "${PWD}") \
         -e HOST_PWD=$(PWD) \
         --name molecule \
@@ -43,13 +45,19 @@ fi
 # This option is used to keep molecule context  (all molecule cache files)
 # between successive creation/execution/deletion of the molecule container.
 #
+# -v ~/.ssh:/root/.ssh
+# This option is used to get all ssh context (known hosts, keys)
+# of the host.
+#
 # -e HOST_PWD=$(PWD)
 # This option is usefull to have the Host PWD information inside the molecule
-# container. We need this information, as if we run a new docker container
-# container from the molecule container (docker in docker), if we are using
-# PWD in a sharing filesytem process, it will be equal to /tmp/<project_dir>,
-# but container will be created in the host context, where this directory
-# does not exist....
+# container. We need this information, in following context: if we run a new
+# docker container from the molecule container (docker in docker) with
+# sharing filesystem process. If we are using the PWD variable in this
+# sharing filesystem process, it will be equal to /tmp/<project_dir>,
+# (current directory in the molecule container). But the conainer 
+# will be creaeted in the host context, where this directory does not
+# exist... So user must use HOST_PWD instead of PWD in the sharing process.
 #
 # --name molecule
 # created container will be named "molecule"

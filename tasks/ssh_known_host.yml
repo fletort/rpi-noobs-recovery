@@ -1,0 +1,23 @@
+---
+# ssh_known_host.yml
+- name: "Build Array of ssh client from group {{ ssh_client_group_name }}"
+  set_fact:
+    ssh_client_list: "{{ hostvars[item] }}"
+  with_items: "{{ groups[ssh_client_group_name] }}"
+  when: ssh_client_group_name is defined
+
+- name: Remove deprecated known Host from localhost
+  known_hosts:
+    name: "{{ inventory_hostname }}"
+    state: absent
+  delegate_to: localhost
+  connection: local
+
+- name: Remove deprecated known Host from given clients
+  known_hosts:
+    name: "{{ inventory_hostname }}"
+    state: absent
+  delegate_to: "{{ item.inventory_hostname }}"
+  with_items:
+    - "{{ ssh_client_list }}"
+  when: ssh_client_list is defined
