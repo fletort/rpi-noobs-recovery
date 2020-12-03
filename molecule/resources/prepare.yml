@@ -1,4 +1,8 @@
 ---
+- hosts: localhost
+  name: Gather facts from localhost
+  tasks: [ ]
+
 - name: Prepare - Patch rpi Docker image
   hosts: rpi
   tasks:
@@ -14,8 +18,7 @@
       # localhost port
       set_fact:
         noobs_repo_server: "{{ noobs_repo_server | regex_replace('noobs_repo:8080', 'localhost:'+lookup('env', 'HOST_PORT') | default('8080', True)) }}"
-      when: (ansible_facts.virtualization_type is not defined) or (ansible_facts.virtualization_type != 'docker')
-
+      when: (hostvars['localhost'].ansible_facts.virtualization_type is not defined) or (hostvars['localhost'].ansible_facts.virtualization_type != 'docker')
 
 - name: Prepare - Localhost Actions
   hosts: localhost
